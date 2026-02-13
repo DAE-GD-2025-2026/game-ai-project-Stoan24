@@ -10,11 +10,8 @@ SteeringOutput Seek::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
 
-	const FVector2D displacement = Target.Position - Agent.GetPosition();
-	output.LinearVelocity = displacement / DeltaTime;
-
-	const float angle = Target.Orientation - Agent.GetRotation();
-	output.AngularVelocity = angle / DeltaTime;
+	const FVector2D direction = Target.Position - Agent.GetPosition();
+	output.LinearVelocity = direction / DeltaTime;
 
 	return output;
 }
@@ -25,11 +22,8 @@ SteeringOutput Flee::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
 
-	const FVector2D displacement = Target.Position - Agent.GetPosition();
-	output.LinearVelocity = -displacement / DeltaTime;
-
-	const float angle = Target.Orientation - Agent.GetRotation();
-	output.AngularVelocity = -angle / DeltaTime;
+	const FVector2D direction = Target.Position - Agent.GetPosition();
+	output.LinearVelocity = -direction / DeltaTime;
 
 	return output;
 }
@@ -40,7 +34,6 @@ SteeringOutput Arrive::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
 
-	
 	return output;
 }
 
@@ -49,7 +42,13 @@ SteeringOutput Arrive::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 SteeringOutput Face::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
-	
+	const FVector2D direction = Target.Position - Agent.GetPosition();
+
+	float targetAngle = FMath::RadiansToDegrees((FMath::Atan2(direction.Y, direction.X)));
+
+	float currentAngle = Agent.GetActorRotation().Yaw;
+
+	output.AngularVelocity = FMath::FindDeltaAngleDegrees(currentAngle, targetAngle) / DeltaTime;
 
 	return output;
 }
