@@ -25,4 +25,80 @@ protected:
 	FTargetData Target;
 };
 
-// Your own SteeringBehaviors should follow here...
+class Seek : public ISteeringBehavior
+{
+public:
+	Seek() = default;
+	virtual ~Seek() override = default;
+
+	//Seek Behaviour
+	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
+
+};
+
+
+class Flee : public ISteeringBehavior
+{
+public:
+	Flee() = default;
+	virtual ~Flee() override = default;
+
+	//Flee Behaviour
+	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
+
+};
+
+class Arrive : public ISteeringBehavior
+{
+public:
+	Arrive() = default;
+	virtual ~Arrive() override = default;
+
+	//Arrive Behaviour
+	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
+
+};
+
+class Face : public ISteeringBehavior
+{
+public:
+	Face() = default;
+	virtual ~Face() override = default;
+
+	//Face Behaviour
+	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
+
+};
+
+class Pursuit : public ISteeringBehavior
+{
+public:
+	Pursuit() = default;
+	virtual ~Pursuit() override = default;
+
+	//Pursuit Behaviour
+	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
+
+};
+
+class Evade : public ISteeringBehavior
+{
+public:
+	Evade() = default;
+	virtual ~Evade() override = default;
+
+	//Evade Behaviour
+	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
+
+};
+
+class Wander : public ISteeringBehavior
+{
+public:
+	Wander() = default;
+	virtual ~Wander() override = default;
+
+	//Wander Behaviour
+	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
+
+};
