@@ -96,6 +96,21 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaTime, ASteeringAgent& Agent
 {
 	SteeringOutput output;
 
+	//Calculate distance
+	const FVector2D direction = Target.Position - Agent.GetPosition();
+	const float distance = direction.Size();
+
+	//Calculate time
+	float time = distance / Agent.GetMaxLinearSpeed();
+	time = FMath::Min(time, 5.0f);
+
+	//Calculate where the will be after the time
+	const FVector2D predictedPosition = Target.Position + (Target.LinearVelocity * time);
+
+	//Use that position to calculate where to 'SEEK' to
+	const FVector2D desiredPosition = predictedPosition - Agent.GetPosition();
+
+	output.LinearVelocity = desiredPosition / DeltaTime;
 
 	return output;
 }
@@ -106,6 +121,21 @@ SteeringOutput Evade::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
 
+	//Calculate distance
+	const FVector2D direction = Target.Position - Agent.GetPosition();
+	const float distance = direction.Size();
+
+	//Calculate time
+	float time = distance / Agent.GetMaxLinearSpeed();
+	time = FMath::Min(time, 5.0f);
+
+	//Calculate where the will be after the time
+	const FVector2D predictedPosition = Target.Position + (Target.LinearVelocity * time);
+
+	//Use that position to calculate where to 'FLEE' from
+	const FVector2D desiredPosition = predictedPosition - Agent.GetPosition();
+
+	output.LinearVelocity = -desiredPosition / DeltaTime;
 
 	return output;
 }
@@ -116,8 +146,7 @@ SteeringOutput Wander::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
 
-	const FVector2D direction = Target.Position - Agent.GetPosition();
-	output.LinearVelocity = direction / DeltaTime;
+	
 
 	return output;
 }
