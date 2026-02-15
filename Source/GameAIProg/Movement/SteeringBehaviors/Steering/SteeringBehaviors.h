@@ -57,6 +57,9 @@ public:
 	//Arrive Behaviour
 	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
 
+private:
+	float m_MaxSpeed = 0.f;
+	bool m_SpeedIsSaved = false;
 };
 
 class Face : public ISteeringBehavior

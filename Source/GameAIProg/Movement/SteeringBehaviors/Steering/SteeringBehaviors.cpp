@@ -34,6 +34,43 @@ SteeringOutput Arrive::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
 
+	//Save max speed
+	if (!m_SpeedIsSaved)
+	{
+		m_MaxSpeed = Agent.GetMaxLinearSpeed();
+		m_SpeedIsSaved = true;
+	}
+
+	const FVector2D direction = Target.Position - Agent.GetPosition();
+	output.LinearVelocity = direction / DeltaTime;
+
+
+	const float slowRadius = 500.f;
+	const float TargetRadius = 100.f;
+
+	float distance = direction.Size();
+
+	
+	if (distance > slowRadius)
+	{
+		Agent.SetMaxLinearSpeed(m_MaxSpeed);
+	}
+	else if (distance <= TargetRadius)
+	{
+		Agent.SetMaxLinearSpeed(0.f);
+	}
+	else
+	{
+		//Calculate where we are between the 2 radii
+		float alpha = (distance - TargetRadius) / (slowRadius - TargetRadius);
+
+		alpha = FMath::Clamp(alpha, 0.f, 1.f);
+
+		float speed = m_MaxSpeed * alpha;
+		Agent.SetMaxLinearSpeed(speed);
+	}
+
+
 	return output;
 }
 
@@ -79,6 +116,8 @@ SteeringOutput Wander::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
 
+	const FVector2D direction = Target.Position - Agent.GetPosition();
+	output.LinearVelocity = direction / DeltaTime;
 
 	return output;
 }
