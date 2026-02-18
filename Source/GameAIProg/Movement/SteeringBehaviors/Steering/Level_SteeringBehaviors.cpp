@@ -222,6 +222,7 @@ void ALevel_SteeringBehaviors::RemoveAgent(unsigned int Index)
 void ALevel_SteeringBehaviors::SetAgentBehavior(ImGui_Agent& Agent)
 {
 	Agent.Behavior.reset();
+	Agent.Agent->SetIsAutoOrienting(true);
 	
 	
 	switch (static_cast<BehaviorTypes>(Agent.SelectedBehavior))
@@ -236,6 +237,7 @@ void ALevel_SteeringBehaviors::SetAgentBehavior(ImGui_Agent& Agent)
 		Agent.Behavior = std::make_unique<Arrive>();
 		break;
 	case BehaviorTypes::Face:
+		Agent.Agent->SetIsAutoOrienting(false);
 		Agent.Behavior = std::make_unique<Face>();
 		break;
 	case BehaviorTypes::Pursuit:

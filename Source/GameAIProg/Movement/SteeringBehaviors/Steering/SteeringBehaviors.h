@@ -95,13 +95,17 @@ public:
 
 };
 
-class Wander : public ISteeringBehavior
+class Wander : public Seek
 {
 public:
 	Wander() = default;
 	virtual ~Wander() override = default;
 
-	//Wander Behaviour
 	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
 
+protected:
+	float Offset = 200.0f;         // Distance to the circle center
+	float Radius = 100.0f;         // Radius of the circle
+	float MaxAngleChange = 0.5f;   // Max jitter per frame (in radians)
+	float WanderAngle = 0.0f;      // Current direction on the circle
 };

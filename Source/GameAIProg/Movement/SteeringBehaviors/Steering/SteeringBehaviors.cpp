@@ -76,16 +76,28 @@ SteeringOutput Arrive::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 
 //FACE
 //*******
-SteeringOutput Face::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
+SteeringOutput Face::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
-	SteeringOutput output;
-	const FVector2D direction = Target.Position - Agent.GetPosition();
+	SteeringOutput output{};
+	output.IsValid = true;
 
-	float targetAngle = FMath::RadiansToDegrees((FMath::Atan2(direction.Y, direction.X)));
+	FVector const AgentPos = Agent.GetActorLocation();
+	FVector2D const Direction = FVector2D(Target.Position.X - AgentPos.X, Target.Position.Y - AgentPos.Y).GetSafeNormal();
 
-	float currentAngle = Agent.GetActorRotation().Yaw;
+	FVector const Forward = Agent.GetActorForwardVector();
+	FVector2D const CurrentDirection = FVector2D(Forward.X, Forward.Y).GetSafeNormal();
 
-	output.AngularVelocity = FMath::FindDeltaAngleDegrees(currentAngle, targetAngle) / DeltaTime;
+	float const Dot = FVector2D::DotProduct(CurrentDirection, Direction);
+	float const Cross = FVector2D::CrossProduct(CurrentDirection, Direction);
+
+	if (FMath::IsNearlyEqual(Dot, 1.0f))
+	{
+		output.AngularVelocity = 0.0f;
+	}
+	else
+	{
+		output.AngularVelocity = (Cross > 0) ? 1.0f : -1.0f;
+	}
 
 	return output;
 }
@@ -144,9 +156,16 @@ SteeringOutput Evade::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 //*******
 SteeringOutput Wander::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
-	SteeringOutput output;
+	WanderAngle += FMath::FRandRange(-MaxAngleChange, MaxAngleChange);
 
-	
+	FVector const AgentForward = Agent.GetActorForwardVector();
+	FVector2D const Forward2D{ AgentForward.X, AgentForward.Y };
 
-	return output;
+	FVector2D const CircleCenter = Agent.GetPosition() + (Forward2D * Offset);
+
+	FVector2D const Displacement{ Radius * FMath::Cos(WanderAngle), Radius * FMath::Sin(WanderAngle) };
+
+	Target.Position = CircleCenter + Displacement;
+
+	return Seek::CalculateSteering(DeltaTime, Agent);
 }
