@@ -19,7 +19,8 @@ public:
 		{};
 	};
 
-	BlendedSteering(const std::vector<WeightedBehavior>& WeightedBehaviors);
+	explicit BlendedSteering(const std::vector<WeightedBehavior>& WeightedBehaviors);
+	virtual ~BlendedSteering() override;
 
 	void AddBehaviour(const WeightedBehavior& WeightedBehavior) { WeightedBehaviors.push_back(WeightedBehavior); }
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& Agent) override;

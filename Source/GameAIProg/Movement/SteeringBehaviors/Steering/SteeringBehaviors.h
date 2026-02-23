@@ -93,6 +93,10 @@ public:
 	//Evade Behaviour
 	virtual SteeringOutput CalculateSteering(float DeltaTime, ASteeringAgent& Agent) override;
 
+private:
+
+	float evadeRadius{ 500.f };
+	
 };
 
 class Wander : public Seek

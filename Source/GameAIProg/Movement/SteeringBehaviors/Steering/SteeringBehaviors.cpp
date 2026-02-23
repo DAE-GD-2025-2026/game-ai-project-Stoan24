@@ -132,22 +132,31 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaTime, ASteeringAgent& Agent
 SteeringOutput Evade::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 {
 	SteeringOutput output;
+	output.IsValid = false;
 
-	//Calculate distance
-	const FVector2D direction = Target.Position - Agent.GetPosition();
-	const float distance = direction.Size();
+	const FVector2D directionToTarget = Target.Position - Agent.GetPosition();
+	const float distance = directionToTarget.Size();
 
-	//Calculate time
-	float time = distance / Agent.GetMaxLinearSpeed();
+	//Only evade if the seeker is in the circle
+	if (distance > evadeRadius)
+	{
+		return output;
+	}
+
+	float agentMaxSpeed = Agent.GetMaxLinearSpeed();
+	float time = (agentMaxSpeed > 0) ? (distance / agentMaxSpeed) : 0.f;
 	time = FMath::Min(time, 5.0f);
 
-	//Calculate where the will be after the time
 	const FVector2D predictedPosition = Target.Position + (Target.LinearVelocity * time);
 
-	//Use that position to calculate where to 'FLEE' from
-	const FVector2D desiredPosition = predictedPosition - Agent.GetPosition();
+	FVector2D escapeDirection = Agent.GetPosition() - predictedPosition;
 
-	output.LinearVelocity = -desiredPosition / DeltaTime;
+	if (!escapeDirection.IsNearlyZero())
+	{
+		escapeDirection.Normalize();
+		output.LinearVelocity = escapeDirection * agentMaxSpeed;
+		output.IsValid = true;
+	}
 
 	return output;
 }
@@ -167,5 +176,7 @@ SteeringOutput Wander::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 
 	Target.Position = CircleCenter + Displacement;
 
-	return Seek::CalculateSteering(DeltaTime, Agent);
+	auto output = Seek::CalculateSteering(DeltaTime, Agent);
+	output.IsValid = true;
+	return output;
 }

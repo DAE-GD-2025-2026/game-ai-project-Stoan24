@@ -2,11 +2,14 @@
 
 #pragma once
 
+#include <memory>
+
 #include "CoreMinimal.h"
 #include "CombinedSteeringBehaviors.h"
 #include "GameAIProg/Shared/Level_Base.h"
 #include "GameAIProg/Movement/SteeringBehaviors/Steering/SteeringBehaviors.h"
 #include "GameAIProg/Movement/SteeringBehaviors/SteeringAgent.h"
+
 #include "Level_CombinedSteering.generated.h"
 
 UCLASS()
@@ -28,9 +31,27 @@ protected:
 	virtual void BeginDestroy() override;
 
 private:
+
+	enum class BehaviorTypes
+	{
+		Seek,
+		Wander,
+		Evade,
+
+		// @ End
+		Count
+	};
+
 	//Datamembers
 	bool UseMouseTarget = false;
 	bool CanDebugRender = false;
 
-	
+	ASteeringAgent* DrunkAgent { nullptr };
+	ASteeringAgent* EvadingAgent { nullptr };
+
+	std::vector<BlendedSteering::WeightedBehavior> BlendedBehaviors{};
+	std::vector<ISteeringBehavior*> PriorityBehaviors{};
+
+	PrioritySteering* pPrioritySteering { nullptr };
+	BlendedSteering* pBlendedSteering { nullptr };
 };

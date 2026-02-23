@@ -15,19 +15,47 @@ void ALevel_CombinedSteering::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Seek* pSeek = new Seek();
+	Wander* pWanderBlend = new Wander();
+	Wander* pWanderPrio = new Wander();
+	Evade* pEvade = new Evade();
+
+	BlendedBehaviors.clear();
+	BlendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pSeek, 0.5f));
+	BlendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pWanderBlend, 0.5f));
+
+	pBlendedSteering = new BlendedSteering(BlendedBehaviors);
+
+	PriorityBehaviors.clear();
+	PriorityBehaviors.push_back(pEvade);
+	PriorityBehaviors.push_back(pWanderPrio);
+
+
+	DrunkAgent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ -500, 0, 90 }, FRotator::ZeroRotator);
+	pBlendedSteering = new BlendedSteering(BlendedBehaviors);
+	DrunkAgent->SetSteeringBehavior(pBlendedSteering);
+	DrunkAgent->SetDebugRenderingEnabled(true);
+
+
+	EvadingAgent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ 500, 0, 90 }, FRotator::ZeroRotator);
+	pPrioritySteering = new PrioritySteering(PriorityBehaviors);
+	EvadingAgent->SetSteeringBehavior(pPrioritySteering);
+	EvadingAgent->SetDebugRenderingEnabled(true);
 }
 
 void ALevel_CombinedSteering::BeginDestroy()
 {
 	Super::BeginDestroy();
-
 }
+
+
 
 // Called every frame
 void ALevel_CombinedSteering::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+
 #pragma region UI
 	//UI
 	{
@@ -67,7 +95,8 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 	
 		if (ImGui::Checkbox("Debug Rendering", &CanDebugRender))
 		{
-   // TODO: Handle the debug rendering of your agents here :)
+			if (DrunkAgent) DrunkAgent->SetDebugRenderingEnabled(CanDebugRender);
+			if (EvadingAgent) EvadingAgent->SetDebugRenderingEnabled(CanDebugRender);
 		}
 		ImGui::Checkbox("Trim World", &TrimWorld->bShouldTrimWorld);
 		if (TrimWorld->bShouldTrimWorld)
@@ -85,20 +114,84 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 		ImGui::Spacing();
 
 
-		// ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
-		// 	pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
-		// 	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
-		//
-		// ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
-		// pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
-		// [this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
+		 ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
+		 	pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
+		 	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
+		
+		 ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
+		 pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
+		 [this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
 	
 		//End
 		ImGui::End();
 	}
+
 #pragma endregion
-	
-	// Combined Steering Update
- // TODO: implement handling mouse click input for seek
- // TODO: implement Make sure to also evade the wanderer
+
+	if (DrunkAgent && EvadingAgent)
+	{
+		FTargetData evaderData;
+		evaderData.Position = FVector2D(EvadingAgent->GetActorLocation());
+		evaderData.LinearVelocity = FVector2D(EvadingAgent->GetVelocity());
+
+		auto& blendedBehaviors = pBlendedSteering->GetWeightedBehaviorsRef();
+		if (!blendedBehaviors.empty() && blendedBehaviors[0].pBehavior)
+		{
+			blendedBehaviors[0].pBehavior->SetTarget(evaderData);
+		}
+
+		FTargetData drunkData;
+		drunkData.Position = FVector2D(DrunkAgent->GetActorLocation());
+		drunkData.LinearVelocity = FVector2D(DrunkAgent->GetVelocity());
+
+		if (!PriorityBehaviors.empty() && PriorityBehaviors[0])
+		{
+			PriorityBehaviors[0]->SetTarget(drunkData);
+		}
+	}
+
+	const APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (PC && PC->WasInputKeyJustPressed(EKeys::LeftMouseButton))
+	{
+		FHitResult Hit;
+		if (PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+		{
+			FTargetData mouseTarget;
+			mouseTarget.Position = FVector2D(Hit.Location);
+		}
+	}
+
+	if (CanDebugRender)
+	{
+		if (DrunkAgent)
+		{
+			const FVector location = DrunkAgent->GetActorLocation();
+			const FVector velocity = DrunkAgent->GetVelocity();
+
+			//Draw Current Velocity
+			DrawDebugDirectionalArrow(GetWorld(), location, location + velocity,
+				50.f, FColor::Green, false, -1.f, 0, 3.f);
+
+			//Draw Wander
+			const FVector forward = DrunkAgent->GetActorForwardVector();
+			constexpr float wanderOffset = 200.f;
+			constexpr float wanderRadius = 100.f;
+			const FVector circleCenter = location + (forward * wanderOffset);
+
+			DrawDebugCircle(GetWorld(), circleCenter, wanderRadius, 32,
+				FColor::White, false, -1.f, 0, 2.f, FVector(0, 1, 0), FVector(1, 0, 0), false);
+		}
+
+		if (EvadingAgent)
+		{
+			//Draw PanicCircle
+			float panicRadius = 500.f;
+
+			float dist = FVector::Dist(DrunkAgent->GetActorLocation(), EvadingAgent->GetActorLocation());
+
+			FColor debugColor = (dist < panicRadius) ? FColor::Red : FColor::Green;
+			DrawDebugCircle(GetWorld(), EvadingAgent->GetActorLocation(), panicRadius, 64,
+				debugColor, false, -1.f, 0, 2.f, FVector(0, 1, 0), FVector(1, 0, 0), false);
+		}
+	}
 }
