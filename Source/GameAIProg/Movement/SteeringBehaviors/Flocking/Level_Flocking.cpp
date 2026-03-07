@@ -19,6 +19,13 @@ void ALevel_Flocking::BeginPlay()
 	TrimWorld->SetTrimWorldSize(3000.f);
 	TrimWorld->bShouldTrimWorld = true;
 
+	pWander = std::make_unique<Wander>();
+
+	pAgentToEvade = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ 100, 100, 0 }, FRotator::ZeroRotator);
+	pAgentToEvade->SetSteeringBehavior(pWander.get());
+	pAgentToEvade->SetMaxLinearSpeed(400.0f);
+
+
 	pFlock = TUniquePtr<Flock>(
 		new Flock(
 			GetWorld(),

@@ -31,6 +31,7 @@ Flock::Flock(
 	pWanderBehavior = std::make_unique<Wander>();
 	pEvadeBehavior = std::make_unique<Evade>();
 
+	//Blended
 	std::vector<BlendedSteering::WeightedBehavior> blendedBehaviors{};
 	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pCohesionBehavior.get(), 0.5f));
 	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pSeparationBehavior.get(), 0.5f));
@@ -40,16 +41,23 @@ Flock::Flock(
 
 	pBlendedSteering = std::make_unique<BlendedSteering>(blendedBehaviors);
 
+	//Priority
+	std::vector<ISteeringBehavior*> priotrityBehaviors{};
+	priotrityBehaviors.push_back(pEvadeBehavior.get());
+	priotrityBehaviors.push_back(pBlendedSteering.get());
+
+	pPrioritySteering = std::make_unique<PrioritySteering>(priotrityBehaviors);
+
+
+	//Spawning
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	for (int i = 0; i < FlockSize; i++)
 	{
 		Agents[i] = pWorld->SpawnActor<ASteeringAgent>(AgentClass, FVector{ -500, 0, 90 }, FRotator::ZeroRotator, SpawnInfo);
-		Agents[i]->SetSteeringBehavior(pBlendedSteering.get());
+		Agents[i]->SetSteeringBehavior(pPrioritySteering.get());
 	}
-
-	//pPrioritySteering = std::make_unique<PrioritySteering>();
 
 	if (bTrimWorld)
 	{
@@ -72,6 +80,14 @@ void Flock::Tick(float DeltaTime)
   // TODO: register the neighbors for this agent (-> fill the memory pool with the neighbors for the currently evaluated agent)
   // TODO: update the agent (-> the steeringbehaviors use the neighbors in the memory pool)
   // TODO: trim the agent to the world
+
+	if (pAgentToEvade && pEvadeBehavior)
+	{
+		FTargetData targetData;
+		targetData.Position = pAgentToEvade->GetPosition();
+		targetData.LinearVelocity = FVector2D(pAgentToEvade->GetVelocity());
+		pEvadeBehavior->SetTarget(targetData);
+	}
 
 	for (ASteeringAgent* pAgent : Agents)
 	{
@@ -99,6 +115,17 @@ void Flock::RenderDebug()
 	if (DebugRenderNeighborhood)
 	{
 		RenderNeighborhood();
+	}
+
+	if (pAgentToEvade)
+	{
+		FVector hunterLoc = pAgentToEvade->GetActorLocation();
+
+		DrawDebugCircle(pWorld, hunterLoc, 400.f, 72,
+			FColor::Red, false, -1.f, 0, 3.f, FVector(0, 1, 0), FVector(1, 0, 0), false);
+
+		DrawDebugDirectionalArrow(pWorld, hunterLoc, hunterLoc + pAgentToEvade->GetVelocity(),
+			50.f, FColor::Red, false, -1.f, 0, 2.f);
 	}
 }
 
