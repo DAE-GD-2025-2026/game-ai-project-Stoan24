@@ -9,11 +9,6 @@ BlendedSteering::BlendedSteering(const std::vector<WeightedBehavior>& WeightedBe
 
 BlendedSteering::~BlendedSteering()
 {
-	for (auto& wb : WeightedBehaviors)
-	{
-		delete wb.pBehavior;
-		wb.pBehavior = nullptr;
-	}
 }
 
 //****************

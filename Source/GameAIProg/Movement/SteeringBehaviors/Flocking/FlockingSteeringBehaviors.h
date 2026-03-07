@@ -18,7 +18,7 @@ private:
 
 //SEPARATION - FLOCKING
 //*********************
-class Separation final : public Flee
+class Separation final : public ISteeringBehavior
 {
 public:
 	explicit Separation(Flock* const pFlock) :pFlock(pFlock) {};
@@ -31,13 +31,13 @@ private:
 };
 //VELOCITY MATCH - FLOCKING
 //************************
-class VelocityMatch final
+class VelocityMatch final : public ISteeringBehavior
 {
 public:
 	explicit VelocityMatch(Flock* const pFlock) :pFlock(pFlock) {};
 
 	//Cohesion Behavior
-	SteeringOutput CalculateSteering(float deltaT, ASteeringAgent& pAgent);
+	virtual SteeringOutput CalculateSteering(float deltaT, ASteeringAgent& pAgent) override;
 
 private:
 	Flock* pFlock = nullptr;

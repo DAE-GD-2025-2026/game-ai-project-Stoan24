@@ -8,20 +8,16 @@
 //COHESION (FLOCKING)
 SteeringOutput Cohesion::CalculateSteering(float deltaT, ASteeringAgent& pAgent)
 {
-	SteeringOutput steering = {};
+	if (pFlock->GetNrOfNeighbors() == 0) return {};
 
 	//Get average position
-	const FVector2D avgPos = pFlock->GetAverageNeighborPos();
+	const FVector2D avgPosition = pFlock->GetAverageNeighborPos();
+	Target.Position = avgPosition;
 
-	if (avgPos.IsNearlyZero())
-		return steering;
 
-	//Seek average position
-	steering.LinearVelocity = avgPos - pAgent.GetPosition();
-	steering.LinearVelocity.Normalize();
-	steering.LinearVelocity *= pAgent.GetMaxLinearSpeed();
-
-	return steering;
+	auto output = Seek::CalculateSteering(deltaT, pAgent);
+	output.IsValid = true;
+	return output;
 }
 
 //*********************
@@ -32,21 +28,29 @@ SteeringOutput Separation::CalculateSteering(float deltaT, ASteeringAgent& pAgen
 	const auto& neighbors = pFlock->GetNeighbors();
 	const int nrOfNeighbors = pFlock->GetNrOfNeighbors();
 
+	if (nrOfNeighbors == 0)
+		return steering;
+
 	for (int i = 0; i < nrOfNeighbors; ++i)
 	{
-		FVector2D vecToAgent = pAgent.GetPosition() - neighbors[i]->GetPosition();
-		const float distance = vecToAgent.Size();
+		FVector2D ToAgent = pAgent.GetPosition() - neighbors[i]->GetPosition();
+		const float distance = ToAgent.Size();
 
 		if (distance > 0)
 		{
-			float forceStrength = 1.0f / distance;
-			vecToAgent.Normalize();
-			steering.LinearVelocity += vecToAgent * forceStrength;
+			//Inversely proportional
+			float pushStrength = 1.0f / distance;
+			ToAgent.Normalize();
+			steering.LinearVelocity += ToAgent * pushStrength;
 		}
 	}
 
-	steering.LinearVelocity.Normalize();
-	steering.LinearVelocity *= pAgent.GetMaxLinearSpeed();
+	if (!steering.LinearVelocity.IsNearlyZero())
+	{
+		steering.LinearVelocity.Normalize();
+		steering.LinearVelocity *= pAgent.GetMaxLinearSpeed();
+		steering.IsValid = true;
+	}
 
 	return steering;
 }
@@ -55,19 +59,19 @@ SteeringOutput Separation::CalculateSteering(float deltaT, ASteeringAgent& pAgen
 //VELOCITY MATCH (FLOCKING)
 SteeringOutput VelocityMatch::CalculateSteering(float deltaT, ASteeringAgent& pAgent)
 {
+	if (pFlock->GetNrOfNeighbors() == 0) return {};
+
+	const FVector2D avgVelocity = pFlock->GetAverageNeighborVelocity();
+
 	SteeringOutput steering = {};
+	steering.LinearVelocity = avgVelocity;
 
-	//Get average velocity
-	const FVector2D avgVel = pFlock->GetAverageNeighborVelocity();
-
-	if (avgVel.IsNearlyZero())
-		return steering;
-
-	//Match velocity
-	steering.LinearVelocity = avgVel;
-
-	steering.LinearVelocity.Normalize();
-	steering.LinearVelocity *= pAgent.GetMaxLinearSpeed();
+	if (!steering.LinearVelocity.IsNearlyZero())
+	{
+		steering.LinearVelocity.Normalize();
+		steering.LinearVelocity *= pAgent.GetMaxLinearSpeed();
+		steering.IsValid = true;
+	}
 
 	return steering;
 }

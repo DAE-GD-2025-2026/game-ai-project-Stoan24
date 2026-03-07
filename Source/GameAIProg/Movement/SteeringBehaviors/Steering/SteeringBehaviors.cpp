@@ -46,7 +46,7 @@ SteeringOutput Arrive::CalculateSteering(float DeltaTime, ASteeringAgent& Agent)
 
 
 	const float slowRadius = 500.f;
-	const float TargetRadius = 100.f;
+	TargetRadius = 100.f;
 
 	float distance = direction.Size();
 

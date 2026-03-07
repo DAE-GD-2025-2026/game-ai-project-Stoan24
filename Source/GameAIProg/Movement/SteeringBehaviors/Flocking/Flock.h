@@ -9,6 +9,7 @@
 #include "Movement/SteeringBehaviors/CombinedSteering/CombinedSteeringBehaviors.h"
 #include <memory>
 #include "imgui.h"
+#include "Shared/WorldTrimVolume.h"
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 #include "../SpacePartitioning/SpacePartitioning.h"
 #endif
@@ -47,6 +48,8 @@ public:
 private:
 	// For debug rendering purposes
 	UWorld* pWorld{nullptr};
+
+	AWorldTrimVolume* TrimWorld{ nullptr };
 	
 	int FlockSize{0};
 	TArray<ASteeringAgent*> Agents{};

@@ -26,7 +26,7 @@ public class GameAIProg : ModuleRules
 			"ImGui",
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] { "AITestSuite" });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"GameAIProg",
