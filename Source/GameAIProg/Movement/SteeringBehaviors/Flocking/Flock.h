@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 // Toggle this define to enable/disable spatial partitioning
-// #define GAMEAI_USE_SPACE_PARTITIONING
+#define GAMEAI_USE_SPACE_PARTITIONING
 
 #include "FlockingSteeringBehaviors.h"
 #include "Movement/SteeringBehaviors/SteeringAgent.h"
@@ -31,13 +31,27 @@ public:
 	void RenderDebug();
 	void ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize);
 
+	const TArray<ASteeringAgent*>& GetNeighbors() const
+	{
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
-	//const TArray<ASteeringAgent*>& GetNeighbors() const { return pPartitionedSpace->GetNeighbors(); }
-	//int GetNrOfNeighbors() const { return pPartitionedSpace->GetNrOfNeighbors(); }
-#else // No space partitioning
+		return pPartitionedSpace->GetNeighbors();
+#else
+		return Neighbors;
+#endif
+	}
+
+	// This returns the correct count
+	int GetNrOfNeighbors() const
+	{
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+		return pPartitionedSpace->GetNrOfNeighbors();
+#else
+		return NrOfNeighbors;
+#endif
+	}
+
+#ifndef GAMEAI_USE_SPACE_PARTITIONING
 	void RegisterNeighbors(ASteeringAgent* const Agent);
-	int GetNrOfNeighbors() const { return NrOfNeighbors; }
-	const TArray<ASteeringAgent*>& GetNeighbors() const { return Neighbors; }
 #endif // USE_SPACE_PARTITIONING
 
 	FVector2D GetAverageNeighborPos() const;
@@ -54,9 +68,9 @@ private:
 	int FlockSize{0};
 	TArray<ASteeringAgent*> Agents{};
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
-	//std::unique_ptr<CellSpace> pPartitionedSpace{};
-	//int NrOfCellsX{ 10 };
-	//TArray<FVector2D> OldPositions{};
+	std::unique_ptr<CellSpace> pPartitionedSpace{};
+	int NrOfCellsX{ 10 };
+	TArray<FVector2D> OldPositions{};
 #else // No space partitioning
 	TArray<ASteeringAgent*> Neighbors{};
 #endif // USE_SPACE_PARTITIONING
