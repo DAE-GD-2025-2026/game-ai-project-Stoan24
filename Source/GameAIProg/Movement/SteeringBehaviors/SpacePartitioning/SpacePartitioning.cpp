@@ -58,14 +58,14 @@ CellSpace::CellSpace(UWorld* pWorld, float Width, float Height, int Rows, int Co
 
 void CellSpace::AddAgent(ASteeringAgent& Agent)
 {
-	int index = PositionToIndex(Agent.GetPosition());
+	const int index = PositionToIndex(Agent.GetPosition());
 	Cells[index].Agents.push_back(&Agent);
 }
 
 void CellSpace::UpdateAgentCell(ASteeringAgent& Agent, const FVector2D& OldPos)
 {
-	int oldIndex = PositionToIndex(OldPos);
-	int newIndex = PositionToIndex(Agent.GetPosition());
+	const int oldIndex = PositionToIndex(OldPos);
+	const int newIndex = PositionToIndex(Agent.GetPosition());
 
 	if (oldIndex != newIndex)
 	{
@@ -74,18 +74,18 @@ void CellSpace::UpdateAgentCell(ASteeringAgent& Agent, const FVector2D& OldPos)
 	}
 }
 
-void CellSpace::RegisterNeighbors(ASteeringAgent& Agent, float QueryRadius)
+void CellSpace::RegisterNeighbors(const ASteeringAgent& Agent, const float QueryRadius)
 {
 	NrOfNeighbors = 0;
-	FVector2D positon = Agent.GetPosition();
+	const FVector2D positon = Agent.GetPosition();
 
 	FRect queryBox;
 	queryBox.Min = { positon.X - QueryRadius, positon.Y - QueryRadius };
 	queryBox.Max = { positon.X + QueryRadius, positon.Y + QueryRadius };
 
-	float queryRadiusSq = QueryRadius * QueryRadius;
+	const float queryRadiusSq = QueryRadius * QueryRadius;
 
-	int maxNeighbors = Neighbors.Num();
+	const int maxNeighbors = Neighbors.Num();
 
 	for (const Cell& cell : Cells)
 	{

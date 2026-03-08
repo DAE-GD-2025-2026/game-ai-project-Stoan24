@@ -38,8 +38,8 @@ Flock::Flock(
 	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pCohesionBehavior.get(), 0.5f));
 	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pSeparationBehavior.get(), 0.5f));
 	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pVelMatchBehavior.get(), 0.5f));
-	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pSeekBehavior.get(), 0.5f));
-	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pWanderBehavior.get(), 0.5f));
+	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pSeekBehavior.get(), 0.0f));
+	blendedBehaviors.push_back(BlendedSteering::WeightedBehavior(pWanderBehavior.get(), 1.0f));
 
 	pBlendedSteering = std::make_unique<BlendedSteering>(blendedBehaviors);
 
@@ -51,21 +51,6 @@ Flock::Flock(
 	pPrioritySteering = std::make_unique<PrioritySteering>(priotrityBehaviors);
 
 
-	//Spawning
-	FActorSpawnParameters SpawnInfo;
-	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-	for (int i = 0; i < FlockSize; i++)
-	{
-		Agents[i] = pWorld->SpawnActor<ASteeringAgent>(AgentClass, FVector{ -500, 0, 90 }, FRotator::ZeroRotator, SpawnInfo);
-		Agents[i]->SetSteeringBehavior(pPrioritySteering.get());
-	}
-
-	if (bTrimWorld)
-	{
-		TrimWorld = pWorld->SpawnActor<AWorldTrimVolume>(FVector{ 0,0,0 }, FRotator::ZeroRotator);
-	}
-
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 	float fullSize = WorldSize;
 
@@ -75,21 +60,39 @@ Flock::Flock(
 		NrOfCellsX, NrOfCellsX,
 		FlockSize
 	);
+#endif
 
-	for (auto pAgent : Agents)
+	//Spawning
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	for (int i = 0; i < FlockSize; i++)
 	{
-		if (pAgent)
+		float randomX = FMath::RandRange(-WorldSize, WorldSize);
+		float randomY = FMath::RandRange(-WorldSize, WorldSize);
+		FVector spawnLocation = FVector{ randomX, randomY, 90.f };
+
+		Agents[i] = pWorld->SpawnActor<ASteeringAgent>(AgentClass, spawnLocation, FRotator::ZeroRotator, SpawnInfo);
+		if (Agents[i]) // Safety check
 		{
-			pPartitionedSpace->AddAgent(*pAgent);
-			OldPositions.Add(pAgent->GetPosition());
+			Agents[i]->SetSteeringBehavior(pPrioritySteering.get());
+
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+			pPartitionedSpace->AddAgent(*Agents[i]);
+			OldPositions.Add(Agents[i]->GetPosition());
+#endif
 		}
 	}
-#endif
+
+	if (bTrimWorld)
+	{
+		TrimWorld = pWorld->SpawnActor<AWorldTrimVolume>(FVector{ 0,0,0 }, FRotator::ZeroRotator);
+	}
 }
 
 Flock::~Flock()
 {
-	for (auto pAgent : Agents)
+	for (const auto pAgent : Agents)
 	{
 		if (pAgent) pAgent->Destroy();
 	}
@@ -110,38 +113,36 @@ void Flock::Tick(float DeltaTime)
 		ASteeringAgent* pAgent = Agents[i];
 		if (!pAgent) continue;
 
+		//Trim
+		FVector position = pAgent->GetActorLocation();
+		const float limit = TrimWorld ? TrimWorld->GetTrimWorldSize() : 1500.f;
+
+		bool bMoved = false;
+
+		if (position.X > limit) { position.X = -limit; bMoved = true; }
+		else if (position.X < -limit) { position.X = limit; bMoved = true; }
+
+
+		if (position.Y > limit) { position.Y = -limit; bMoved = true; }
+		else if (position.Y < -limit) { position.Y = limit; bMoved = true; }
+
+		if (bMoved)
+		{
+			pAgent->SetActorLocation(position);
+		}
+
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 
 		pPartitionedSpace->UpdateAgentCell(*pAgent, OldPositions[i]);
 
 		pPartitionedSpace->RegisterNeighbors(*pAgent, NeighborhoodRadius);
 
+		OldPositions[i] = pAgent->GetPosition();
+
 #else
 
 		RegisterNeighbors(pAgent);
 
-#endif
-
-		//Trim
-		FVector pos = pAgent->GetActorLocation();
-		float limit = TrimWorld ? TrimWorld->GetTrimWorldSize() : 1500.f;
-
-		bool bMoved = false;
-		
-		if (pos.X > limit) { pos.X = -limit; bMoved = true; }
-		else if (pos.X < -limit) { pos.X = limit; bMoved = true; }
-
-		
-		if (pos.Y > limit) { pos.Y = -limit; bMoved = true; }
-		else if (pos.Y < -limit) { pos.Y = limit; bMoved = true; }
-
-		if (bMoved)
-		{
-			pAgent->SetActorLocation(pos);
-		}
-
-#ifdef GAMEAI_USE_SPACE_PARTITIONING
-		OldPositions[i] = pAgent->GetPosition();
 #endif
 	}
 }
@@ -152,10 +153,10 @@ void Flock::RenderDebug()
 	{
 		if(pAgent && DebugRenderSteering)
 		{
-			FVector loc = pAgent->GetActorLocation();
-			FVector vel = pAgent->GetVelocity();
+			FVector location = pAgent->GetActorLocation();
+			FVector velocity = pAgent->GetVelocity();
 
-			DrawDebugDirectionalArrow(pWorld, loc, loc + vel,
+			DrawDebugDirectionalArrow(pWorld, location, location + velocity,
 				50.f, FColor::Green, false, -1.f, 0, 2.f);
 		}
 	}
@@ -167,12 +168,12 @@ void Flock::RenderDebug()
 
 	if (pAgentToEvade)
 	{
-		FVector hunterLoc = pAgentToEvade->GetActorLocation();
+		FVector evaderLocation = pAgentToEvade->GetActorLocation();
 
-		DrawDebugCircle(pWorld, hunterLoc, 400.f, 72,
+		DrawDebugCircle(pWorld, evaderLocation, 400.f, 72,
 			FColor::Red, false, -1.f, 0, 3.f, FVector(0, 1, 0), FVector(1, 0, 0), false);
 
-		DrawDebugDirectionalArrow(pWorld, hunterLoc, hunterLoc + pAgentToEvade->GetVelocity(),
+		DrawDebugDirectionalArrow(pWorld, evaderLocation, evaderLocation + pAgentToEvade->GetVelocity(),
 			50.f, FColor::Red, false, -1.f, 0, 2.f);
 	}
 
@@ -283,11 +284,13 @@ void Flock::RenderNeighborhood()
 			FColor::Cyan, false, -1.f, 0, 2.f, FVector(0, 1, 0), FVector(1, 0, 0), false);
 
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
-		// Update and register using the grid
+
 		pPartitionedSpace->RegisterNeighbors(*Agents[0], NeighborhoodRadius);
+
 #else
-		// Use the old O(n^2) function
+		
 		RegisterNeighbors(Agents[0]);
+
 #endif
 
 		//Lines to all current neighbors
@@ -326,7 +329,7 @@ void Flock::RegisterNeighbors(ASteeringAgent* const pAgent)
 
 FVector2D Flock::GetAverageNeighborPos() const
 {
-	int count = GetNrOfNeighbors();
+	const int count = GetNrOfNeighbors();
 	if (count == 0) return FVector2D::ZeroVector;
 
 	FVector2D avgPosition = FVector2D::ZeroVector;
