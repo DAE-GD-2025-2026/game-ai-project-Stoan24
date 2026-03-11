@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Algorithms/EulerianPath.h"
 #include "Movement/SteeringBehaviors/PathFollow/PathFollowSteeringBehavior.h"
 #include "Shared/Level_Base.h"
 #include "Shared/Graph/Graph.h"
@@ -27,8 +26,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	UPROPERTY()
-	APlayerController* PlayerController{nullptr};
 	
 	virtual void BeginPlay() override;
 	virtual void BeginDestroy() override;

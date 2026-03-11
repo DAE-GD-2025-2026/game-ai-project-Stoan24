@@ -123,15 +123,20 @@ void CellSpace::RenderCells() const
 
 	for (const Cell& cell : Cells)
 	{
-		auto points = cell.GetRectPoints();
+		// Define the 4 corners based strictly on Min and the known Width/Height
+		FVector2D Min = cell.BoundingBox.Min;
+		FVector2D Max = Min + FVector2D(CellWidth, CellHeight); // Force the size
 
-		FVector zOffset{ 0, 0, 90 };
-		for (int i = 0; i < 4; ++i)
-		{
-			FVector start = FVector(points[i], 0) + zOffset;
-			FVector end = FVector(points[(i + 1) % 4], 0) + zOffset;
-			DrawDebugLine(pWorld, start, end, FColor::Silver, false, -1.f, 0, 1.f);
-		}
+		FVector TL = FVector(Min.X, Min.Y, 90.f);
+		FVector TR = FVector(Max.X, Min.Y, 90.f);
+		FVector BR = FVector(Max.X, Max.Y, 90.f);
+		FVector BL = FVector(Min.X, Max.Y, 90.f);
+
+		// Draw the 4 edges
+		DrawDebugLine(pWorld, TL, TR, FColor::Silver, false, -1.f, 0, 1.f);
+		DrawDebugLine(pWorld, TR, BR, FColor::Silver, false, -1.f, 0, 1.f);
+		DrawDebugLine(pWorld, BR, BL, FColor::Silver, false, -1.f, 0, 1.f);
+		DrawDebugLine(pWorld, BL, TL, FColor::Silver, false, -1.f, 0, 1.f);
 
 		if (cell.Agents.size() > 0)
 		{

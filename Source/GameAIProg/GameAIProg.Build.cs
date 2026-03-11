@@ -8,7 +8,8 @@ public class GameAIProg : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		
+		// Enable standard C++ dynamic casts & runtime typeinfo
+		bUseRTTI = true;
 		
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"Core",
@@ -26,7 +27,7 @@ public class GameAIProg : ModuleRules
 			"ImGui",
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "AITestSuite" });
+		PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"GameAIProg",
