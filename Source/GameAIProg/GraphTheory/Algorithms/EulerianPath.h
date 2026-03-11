@@ -33,10 +33,8 @@ namespace GameAI
 
 	inline Eulerianity EulerianPath::IsEulerian() const
 	{
-		// TODO If the graph is not connected, there can be no Eulerian Trail
 		if (IsConnected()) return Eulerianity::notEulerian;
 
-		// TODO Count nodes with odd degree
 		int count = 0;
 
 		std::vector<Node*> Nodes = m_pGraph->GetActiveNodes();
@@ -55,15 +53,8 @@ namespace GameAI
 
 		if (count == 0) return Eulerianity::eulerian;
 
-		// TODO A connected graph with exactly 2 nodes with an odd degree is Semi-Eulerian (unless there are only 2 nodes)
 		if (count == 2) return Eulerianity::semiEulerian;
 
-		// TODO An Euler trail can be made, but only starting and ending in these 2 nodes
-
-
-
-		// TODO A connected graph with more than 2 nodes with an odd degree (an odd amount of connections) is not Eulerian
-		// TODO A connected graph with no odd nodes is Eulerian
 		return Eulerianity::notEulerian;
 	}
 
@@ -74,9 +65,6 @@ namespace GameAI
 		std::vector<Node*> Path = {};
 		std::vector<Node*> Nodes = graphCopy.GetActiveNodes();
 		int currentNodeId{ Graphs::InvalidNodeId };
-		
-		// TODO Check if there can be an Euler path
-		// TODO If this graph is not eulerian, return the empty path
 
 		switch (eulerianity)
 		{
@@ -100,8 +88,7 @@ namespace GameAI
 			break;
 		}
 
-		
-		// TODO Start algorithm loop
+
 		std::stack<int> nodeStack;
 
 		while (nodeStack.empty() && graphCopy.FindConnectionsFrom(currentNodeId).empty())
@@ -124,13 +111,9 @@ namespace GameAI
 
 	inline void EulerianPath::VisitAllNodesDFS(const std::vector<Node*>& Nodes, std::vector<bool>& visited, int startIndex ) const
 	{
-		// TODO Mark the visited node
 		visited[startIndex] = true;
 
-		// TODO Ask the graph for the connections from that node
 		auto NodeConnections = m_pGraph->FindConnectionsFrom(Nodes.at(startIndex)->GetId());
-
-		// TODO recursively visit any valid connected nodes that were not visited before
 
 		for (auto NodeConnection : NodeConnections)
 		{
@@ -141,8 +124,6 @@ namespace GameAI
 				VisitAllNodesDFS(Nodes, visited, id);
 			}
 		}
-
-		// TODO Tip: use an index-based for-loop to find the correct index
 	}
 
 	inline bool EulerianPath::IsConnected() const
@@ -151,17 +132,13 @@ namespace GameAI
 		if (Nodes.size() == 0)
 			return false;
 
-		// TODO choose a starting node
-
 		std::vector<bool> Visited{};
 		Visited.reserve(Nodes.size());
 
-		// TODO start a depth-first-search traversal from the node that has at least one connection
 		VisitAllNodesDFS(Nodes, Visited, Nodes[0]->GetId());
 
 		
 		
-		// TODO if a node was never visited, this graph is not connected
 		for (auto visit : Visited)
 		{
 			if (!visit)
